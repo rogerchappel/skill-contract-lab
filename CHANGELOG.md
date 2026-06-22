@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Strengthen package smoke coverage for release reviewers.
+
 ## 0.1.0
 
 - Initial local-first SKILL.md contract checker.

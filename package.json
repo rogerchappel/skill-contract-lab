@@ -11,7 +11,7 @@
     "test": "node --test",
     "smoke": "node bin/skill-contract.js fixtures/good-skill/SKILL.md --format markdown",
     "validate": "bash scripts/validate.sh",
-    "package:smoke": "npm pack --dry-run",
+    "package:smoke": "node scripts/package-smoke.js",
     "release:check": "npm run check && npm run test && npm run smoke && npm run package:smoke"
   },
   "keywords": [
@@ -30,13 +30,22 @@
     "bin",
     "src",
     "docs",
+    "examples",
     "fixtures",
+    "scripts",
     "SKILL.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "SECURITY.md"
   ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rogerchappel/skill-contract-lab.git"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/rogerchappel/skill-contract-lab/issues"
+  },
+  "homepage": "https://github.com/rogerchappel/skill-contract-lab#readme"
 }
