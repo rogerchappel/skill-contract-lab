@@ -1,0 +1,36 @@
+{
+  "name": "skill-contract-lab",
+  "version": "0.1.0",
+  "description": "Local-first operational contract checks for SKILL.md files.",
+  "type": "module",
+  "bin": {
+    "skill-contract": "./bin/skill-contract.js"
+  },
+  "scripts": {
+    "check": "node --check bin/skill-contract.js && node --check src/index.js",
+    "test": "node --test",
+    "smoke": "node bin/skill-contract.js fixtures/good-skill/SKILL.md --format markdown",
+    "validate": "bash scripts/validate.sh"
+  },
+  "keywords": [
+    "agents",
+    "skills",
+    "lint",
+    "contract",
+    "markdown"
+  ],
+  "author": "Roger Chappel",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "bin",
+    "src",
+    "docs",
+    "fixtures",
+    "SKILL.md",
+    "README.md",
+    "LICENSE"
+  ]
+}
