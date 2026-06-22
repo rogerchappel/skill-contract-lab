@@ -25,3 +25,16 @@ The checker is deterministic and local. It reports missing required sections as 
 - V1 uses section-based heuristics.
 - It does not judge factual quality.
 - It intentionally avoids LLM scoring so reports are stable in CI.
+
+## Release Verification
+
+Run the same checks used by CI before tagging or publishing:
+
+```bash
+npm run release:check
+```
+
+The release check runs syntax checks, fixture-backed tests, the CLI smoke, and
+`npm run package:smoke`. The package smoke verifies that the packed artifact
+contains the CLI, library source, fixtures, example skill, docs, changelog,
+README, license, and security policy.
