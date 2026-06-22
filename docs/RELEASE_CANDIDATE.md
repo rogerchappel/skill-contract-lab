@@ -9,9 +9,10 @@
 
 ## Verification
 
-- `npm test`
-- `npm run check`
-- `npm run smoke`
+- `npm run validate` - passed on 2026-06-22.
+- `npm run check` - passed through validation.
+- `npm test` - 3 tests passed.
+- `npm run smoke` - rendered a passing SKILL.md contract report.
 
 ## Classification
 
