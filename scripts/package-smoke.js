@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
 const required = [
   'bin/skill-contract.js',
@@ -29,6 +30,15 @@ const missing = required.filter((file) => !files.has(file));
 
 if (missing.length > 0) {
   console.error(`Package smoke failed; missing files: ${missing.join(', ')}`);
+  process.exit(1);
+}
+
+const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+const version = spawnSync(process.execPath, ['bin/skill-contract.js', '--version'], {
+  encoding: 'utf8'
+});
+if (version.status !== 0 || version.stdout.trim() !== packageJson.version) {
+  console.error('Package smoke failed; CLI --version did not match package.json');
   process.exit(1);
 }
 

@@ -3,11 +3,17 @@ import { readFileSync } from 'node:fs';
 import { inspectSkill, renderJson, renderMarkdown } from '../src/index.js';
 
 const args = process.argv.slice(2);
+const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
 function usage() {
   return `Usage: skill-contract <SKILL.md> [--format markdown|json]
 
 Checks whether an agent skill declares an operational contract.`;
+}
+
+if (args.includes('--version')) {
+  console.log(packageJson.version);
+  process.exit(0);
 }
 
 if (args.includes('--help') || args.length === 0) {
