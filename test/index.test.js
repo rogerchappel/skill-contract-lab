@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { inspectSkill, renderMarkdown } from '../src/index.js';
+const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
 const goodSkill = `# Skill
 
@@ -42,4 +45,11 @@ test('renders markdown report', () => {
   const report = inspectSkill('# Skill\n\nDo a task.\n');
   assert.match(renderMarkdown(report), /Skill Contract Report/);
   assert.match(renderMarkdown(report), /Status: fail/);
+});
+
+test('cli reports package version', () => {
+  const version = execFileSync(process.execPath, ['bin/skill-contract.js', '--version'], {
+    encoding: 'utf8',
+  }).trim();
+  assert.equal(version, packageJson.version);
 });
