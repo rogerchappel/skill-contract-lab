@@ -43,8 +43,30 @@ function extractSections(markdown) {
   const lines = markdown.split(/\r?\n/);
   const sections = [];
   let current = { heading: 'preamble', body: [] };
+  let fence = null;
 
   for (const line of lines) {
+    const fenceMarker = /^( {0,3})(`{3,}|~{3,})(.*)$/.exec(line);
+    if (fenceMarker) {
+      const marker = fenceMarker[2];
+      if (!fence) {
+        fence = { character: marker[0], length: marker.length };
+      } else if (
+        marker[0] === fence.character
+        && marker.length >= fence.length
+        && fenceMarker[3].trim() === ''
+      ) {
+        fence = null;
+      }
+      current.body.push(line);
+      continue;
+    }
+
+    if (fence) {
+      current.body.push(line);
+      continue;
+    }
+
     const heading = /^(#{1,3})\s+(.+?)\s*$/.exec(line);
     if (heading) {
       sections.push({ heading: current.heading, body: current.body.join('\n').trim() });
@@ -58,7 +80,8 @@ function extractSections(markdown) {
 }
 
 function findSection(sections, aliases) {
-  return sections.find((section) => aliases.some((alias) => section.heading.includes(normalize(alias))));
+  const normalizedAliases = aliases.map(normalize);
+  return sections.find((section) => normalizedAliases.includes(section.heading));
 }
 
 function normalize(value) {
