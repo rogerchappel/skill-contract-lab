@@ -11,6 +11,7 @@ const requiredSections = [
 export function inspectSkill(markdown, options = {}) {
   const sections = extractSections(markdown);
   const findings = [];
+  let approvalSection;
 
   for (const requirement of requiredSections) {
     const match = findSection(sections, requirement.aliases);
@@ -18,12 +19,18 @@ export function inspectSkill(markdown, options = {}) {
       findings.push({ level: 'error', rule: requirement.id, message: `Missing ${requirement.label} section.` });
       continue;
     }
+    if (requirement.id === 'approval') approvalSection = match;
     if (wordCount(match.body) < 8) {
       findings.push({ level: 'warning', rule: requirement.id, message: `${requirement.label} section is thin.` });
     }
   }
 
-  if (/must\s+use\s+the\s+internet|call\s+api|send\s+email/i.test(markdown) && !/approval/i.test(markdown)) {
+  const executableText = stripCodeExamples(markdown);
+  const requestsExternalAction = /must\s+use\s+the\s+internet|call\s+(?:an?\s+)?api|send\s+(?:an?\s+)?email/i.test(executableText);
+  const hasApprovalRequirement = approvalSection
+    && /(?:approval|consent)\s+(?:is\s+)?(?:explicitly\s+)?(?:required|needed)|(?:require|obtain|get)\s+(?:explicit\s+)?(?:approval|consent)|(?:approval|consent)\s+(?:must|should)\s+be\s+(?:obtained|given|granted)/i.test(stripCodeExamples(approvalSection.body));
+
+  if (requestsExternalAction && !hasApprovalRequirement) {
     findings.push({ level: 'error', rule: 'approval-explicitness', message: 'External actions are mentioned without explicit approval language.' });
   }
 
@@ -37,6 +44,28 @@ export function inspectSkill(markdown, options = {}) {
     summary: { errors, warnings, sections: sections.length },
     findings
   };
+}
+
+function stripCodeExamples(markdown) {
+  const lines = markdown.split(/\r?\n/);
+  const prose = [];
+  let fence = null;
+
+  for (const line of lines) {
+    const fenceMarker = /^( {0,3})(`{3,}|~{3,})(.*)$/.exec(line);
+    if (fenceMarker) {
+      const marker = fenceMarker[2];
+      if (!fence) {
+        fence = { character: marker[0], length: marker.length };
+      } else if (marker[0] === fence.character && marker.length >= fence.length && fenceMarker[3].trim() === '') {
+        fence = null;
+      }
+      continue;
+    }
+    if (!fence && !/^(?: {4}|\t)/.test(line)) prose.push(line);
+  }
+
+  return prose.join('\n');
 }
 
 function extractSections(markdown) {
