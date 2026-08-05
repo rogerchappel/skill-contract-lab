@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { inspectSkill, renderMarkdown } from '../src/index.js';
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+const approvalFixture = (name) => readFileSync(new URL(`../fixtures/${name}/SKILL.md`, import.meta.url), 'utf8');
 
 const goodSkill = `# Skill
 
@@ -89,6 +90,29 @@ Run tests, run the smoke command, and confirm the report has no errors.
 
   assert.equal(report.status, 'fail');
   assert.equal(report.summary.errors, 7);
+});
+
+test('requires substantive approval language in the Approval Requirements body', () => {
+  const report = inspectSkill(approvalFixture('external-action-without-approval'));
+
+  assert.equal(report.status, 'fail');
+  assert.ok(report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+});
+
+test('accepts external actions with an explicit approval requirement', () => {
+  const report = inspectSkill(approvalFixture('external-action-with-approval'));
+
+  assert.equal(report.status, 'pass');
+  assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+});
+
+test('ignores external-action language in fenced and indented examples', () => {
+  const markdown = approvalFixture('external-action-without-approval')
+    .replace('Send email with the completed report after validation succeeds.', 'Keep the completed report in local memory after validation succeeds.')
+    .replace('Run the local checker and review its generated report before continuing.', `Run the local checker and review its generated report before continuing.\n\n\`\`\`text\nsend email\n\`\`\`\n\n    call API`);
+  const report = inspectSkill(markdown);
+
+  assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'));
 });
 
 test('renders markdown report', () => {
