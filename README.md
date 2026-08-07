@@ -23,6 +23,7 @@ The checker is deterministic and local. It reports missing required sections as 
 ## Limitations
 
 - V1 uses section-based heuristics.
+- Approval checks recognize a bounded set of positive requirement phrases and reject common negated or optional forms; they do not perform general natural-language reasoning.
 - It does not judge factual quality.
 - It intentionally avoids LLM scoring so reports are stable in CI.
 
