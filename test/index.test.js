@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { inspectSkill, renderMarkdown } from '../src/index.js';
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
@@ -104,6 +104,44 @@ test('accepts external actions with an explicit approval requirement', () => {
 
   assert.equal(report.status, 'pass');
   assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+});
+
+test('rejects external actions when approval language denies a requirement', () => {
+  const report = inspectSkill(approvalFixture('external-action-with-denied-approval'));
+
+  assert.equal(report.status, 'fail');
+  assert.ok(report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+});
+
+test('rejects equivalent approval requirement denials', () => {
+  for (const denial of [
+    'Approval is not required before sending the report.',
+    'Consent is unnecessary before sending the report.',
+    'The agent does not require explicit approval before sending the report.',
+    'Send the report without obtaining consent from the user.',
+  ]) {
+    const markdown = approvalFixture('external-action-with-denied-approval')
+      .replace('No approval is required before sending email or making any external network call.', denial);
+    const report = inspectSkill(markdown);
+
+    assert.ok(
+      report.findings.some((finding) => finding.rule === 'approval-explicitness'),
+      `expected denial to fail: ${denial}`,
+    );
+  }
+});
+
+test('cli exits with a finding for denied approval language', () => {
+  const fixturePath = new URL('../fixtures/external-action-with-denied-approval/SKILL.md', import.meta.url);
+  const result = spawnSync(process.execPath, ['bin/skill-contract.js', fixturePath.pathname, '--format', 'json'], {
+    cwd: new URL('..', import.meta.url),
+    encoding: 'utf8',
+  });
+
+  assert.equal(result.status, 2);
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.status, 'fail');
+  assert.ok(report.findings.some((finding) => finding.rule === 'approval-explicitness'));
 });
 
 test('ignores external-action language in fenced and indented examples', () => {
