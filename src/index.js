@@ -28,7 +28,7 @@ export function inspectSkill(markdown, options = {}) {
   const executableText = stripCodeExamples(markdown);
   const requestsExternalAction = /must\s+use\s+the\s+internet|call\s+(?:an?\s+)?api|send\s+(?:an?\s+)?email/i.test(executableText);
   const hasApprovalRequirement = approvalSection
-    && /(?:approval|consent)\s+(?:is\s+)?(?:explicitly\s+)?(?:required|needed)|(?:require|obtain|get)\s+(?:explicit\s+)?(?:approval|consent)|(?:approval|consent)\s+(?:must|should)\s+be\s+(?:obtained|given|granted)/i.test(stripCodeExamples(approvalSection.body));
+    && hasPositiveApprovalLanguage(stripCodeExamples(approvalSection.body));
 
   if (requestsExternalAction && !hasApprovalRequirement) {
     findings.push({ level: 'error', rule: 'approval-explicitness', message: 'External actions are mentioned without explicit approval language.' });
@@ -44,6 +44,15 @@ export function inspectSkill(markdown, options = {}) {
     summary: { errors, warnings, sections: sections.length },
     findings
   };
+}
+
+function hasPositiveApprovalLanguage(text) {
+  const positiveRequirement = /(?:approval|consent)\s+(?:is\s+)?(?:explicitly\s+)?(?:required|needed)|(?:require|obtain|get)\s+(?:explicit\s+)?(?:approval|consent)|(?:approval|consent)\s+(?:must|should)\s+be\s+(?:obtained|given|granted)/i;
+  const deniedRequirement = /(?:\bno\s+(?:explicit\s+)?(?:approval|consent)\s+(?:is\s+)?(?:required|needed)\b|\b(?:approval|consent)\s+(?:is\s+)?(?:not|never)\s+(?:required|needed)\b|\b(?:approval|consent)\s+(?:is\s+)?(?:optional|unnecessary)\b|\b(?:do(?:es)?\s+not|doesn't|don't|need\s+not)\s+(?:require|obtain|get)\s+(?:explicit\s+)?(?:approval|consent)\b|\bwithout\s+(?:requiring|obtaining|getting)\s+(?:explicit\s+)?(?:approval|consent)\b)/i;
+
+  return text
+    .split(/(?:[.!?;]|\r?\n)+/)
+    .some((clause) => positiveRequirement.test(clause) && !deniedRequirement.test(clause));
 }
 
 function stripCodeExamples(markdown) {
