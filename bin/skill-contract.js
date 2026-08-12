@@ -11,23 +11,56 @@ function usage() {
 Checks whether an agent skill declares an operational contract.`;
 }
 
-if (args.includes('--version')) {
+if (args.length === 1 && args[0] === '--version') {
   console.log(packageJson.version);
   process.exit(0);
 }
 
-if (args.includes('--help') || args.length === 0) {
+if ((args.length === 1 && args[0] === '--help') || args.length === 0) {
   console.log(usage());
   process.exit(args.length === 0 ? 1 : 0);
 }
 
-const filePath = args[0];
-const formatIndex = args.indexOf('--format');
-const format = formatIndex === -1 ? 'markdown' : args[formatIndex + 1];
+function usageError(message) {
+  console.error(`${message}\n\n${usage()}`);
+  process.exit(1);
+}
+
+let filePath;
+let format = 'markdown';
+let hasFormat = false;
+
+for (let index = 0; index < args.length; index += 1) {
+  const argument = args[index];
+
+  if (argument === '--format') {
+    if (hasFormat) {
+      usageError('Option --format may only be specified once.');
+    }
+
+    const value = args[index + 1];
+    if (value === undefined || value.startsWith('-')) {
+      usageError('Option --format requires a value.');
+    }
+
+    format = value;
+    hasFormat = true;
+    index += 1;
+  } else if (argument.startsWith('-')) {
+    usageError(`Unknown option: ${argument}`);
+  } else if (filePath !== undefined) {
+    usageError('Expected exactly one SKILL.md path.');
+  } else {
+    filePath = argument;
+  }
+}
+
+if (filePath === undefined) {
+  usageError('Expected exactly one SKILL.md path.');
+}
 
 if (!['markdown', 'json'].includes(format)) {
-  console.error('Unsupported format. Use markdown or json.');
-  process.exit(1);
+  usageError('Unsupported format. Use markdown or json.');
 }
 
 try {
