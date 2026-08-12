@@ -5,6 +5,15 @@ import { readFileSync } from 'node:fs';
 import { inspectSkill, renderMarkdown } from '../src/index.js';
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const approvalFixture = (name) => readFileSync(new URL(`../fixtures/${name}/SKILL.md`, import.meta.url), 'utf8');
+const cliPath = 'bin/skill-contract.js';
+const cliCwd = new URL('..', import.meta.url);
+
+function runCli(args) {
+  return spawnSync(process.execPath, [cliPath, ...args], {
+    cwd: cliCwd,
+    encoding: 'utf8',
+  });
+}
 
 const goodSkill = `# Skill
 
@@ -160,8 +169,24 @@ test('renders markdown report', () => {
 });
 
 test('cli reports package version', () => {
-  const version = execFileSync(process.execPath, ['bin/skill-contract.js', '--version'], {
+  const version = execFileSync(process.execPath, [cliPath, '--version'], {
     encoding: 'utf8',
   }).trim();
   assert.equal(version, packageJson.version);
 });
+
+for (const [name, args, message] of [
+  ['unknown options', ['fixtures/good-skill/SKILL.md', '--bogus'], 'Unknown option: --bogus'],
+  ['extra positional paths', ['fixtures/good-skill/SKILL.md', 'trailing'], 'Expected exactly one SKILL.md path'],
+  ['duplicate format options', ['fixtures/good-skill/SKILL.md', '--format', 'json', '--format', 'markdown'], 'Option --format may only be specified once'],
+  ['a missing format value', ['fixtures/good-skill/SKILL.md', '--format'], 'Option --format requires a value'],
+]) {
+  test(`cli rejects ${name} with a usage error`, () => {
+    const result = runCli(args);
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, new RegExp(message));
+    assert.match(result.stderr, /Usage: skill-contract/);
+    assert.equal(result.stdout, '');
+  });
+}
