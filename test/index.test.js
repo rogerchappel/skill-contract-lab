@@ -39,6 +39,12 @@ Run the checker against a local SKILL.md fixture and inspect the report.
 Run tests, run the smoke command, and confirm the report has no errors.
 `;
 
+function contractWith({ action, approval = 'Review local output before continuing.' }) {
+  return goodSkill
+    .replace('The skill reads local files only and must not mutate repositories or external systems.', action)
+    .replace('Explicit approval is required before external actions, network calls, or file writes.', approval);
+}
+
 test('passes a complete skill contract', () => {
   const report = inspectSkill(goodSkill);
   assert.equal(report.status, 'pass');
@@ -161,6 +167,55 @@ test('ignores external-action language in fenced and indented examples', () => {
 
   assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'));
 });
+
+const externalActionFamilies = [
+  {
+    family: 'package publication and releases',
+    action: 'Publish the package and create a remote release tag after validation.',
+    nonAction: 'Inspect package publication metadata and summarize the local release notes.',
+  },
+  {
+    family: 'deployments',
+    action: 'Deploy the application to production after the build passes.',
+    nonAction: 'Review deployment documentation and validate the build locally.',
+  },
+  {
+    family: 'remote repository writes',
+    action: 'Push the branch and open a pull request in the remote repository.',
+    nonAction: 'Inspect the local branch and draft a pull request description in memory.',
+  },
+  {
+    family: 'external-service writes',
+    action: 'Post to the external webhook and send a notification when processing completes.',
+    nonAction: 'Describe the external webhook schema without calling or updating the service.',
+  },
+];
+
+for (const { family, action, nonAction } of externalActionFamilies) {
+  test(`accepts ${family} with explicit approval`, () => {
+    const report = inspectSkill(contractWith({
+      action,
+      approval: 'Explicit approval is required before performing any external action.',
+    }));
+
+    assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+  });
+
+  test(`rejects ${family} with denied approval`, () => {
+    const report = inspectSkill(contractWith({
+      action,
+      approval: 'No approval is required before performing the external action.',
+    }));
+
+    assert.ok(report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+  });
+
+  test(`does not treat discussion of ${family} as an action`, () => {
+    const report = inspectSkill(contractWith({ action: nonAction }));
+
+    assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+  });
+}
 
 test('renders markdown report', () => {
   const report = inspectSkill('# Skill\n\nDo a task.\n');
