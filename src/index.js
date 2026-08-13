@@ -8,6 +8,26 @@ const requiredSections = [
   { id: 'validation', label: 'Validation Workflow', aliases: ['validation workflow', 'verification workflow', 'validation'] }
 ];
 
+// Keep this taxonomy bounded to actions that write outside the local workspace.
+// Each expression requires an action verb so discussion of related metadata or
+// documentation does not by itself create an approval requirement.
+const externalActionPatterns = [
+  // Package publication and releases.
+  /\b(?:publish|release)\s+(?:an?\s+|the\s+)?(?:package|packages|artifact|artifacts|release)\b/i,
+  /\b(?:create|publish|push)\s+(?:an?\s+|the\s+)?(?:remote\s+)?(?:release|release\s+tag|tag)\b/i,
+  // Deployments to remotely hosted environments.
+  /\bdeploy\s+(?:the\s+)?(?:app|application|service|site|website|build|release|artifact|artifacts|package|packages)\b/i,
+  /\bdeploy\s+(?:to|into)\s+(?:an?\s+|the\s+)?(?:production|staging|remote|hosted|cloud)\b/i,
+  // Writes to remote repositories and their collaboration records.
+  /\b(?:push|merge)\s+(?:the\s+|an?\s+)?(?:commit|commits|branch|branches|pull\s+request|merge\s+request|tag|tags)\b/i,
+  /\b(?:open|create|close|approve|update|edit|comment\s+on)\s+(?:the\s+|an?\s+)?(?:pull\s+request|merge\s+request|issue|repository)\b/i,
+  // Writes through external services.
+  /\bsend\s+(?:an?\s+|the\s+)?(?:email|message|notification)\b/i,
+  /\b(?:post|upload|submit|write)\s+(?:to\s+)?(?:an?\s+|the\s+)?(?:external\s+)?(?:service|api|webhook|slack|discord|endpoint)\b/i,
+  /\bcall\s+(?:an?\s+|the\s+)?(?:external\s+)?api\b/i,
+  /\bmust\s+use\s+the\s+internet\b/i,
+];
+
 export function inspectSkill(markdown, options = {}) {
   const sections = extractSections(markdown);
   const findings = [];
@@ -26,7 +46,7 @@ export function inspectSkill(markdown, options = {}) {
   }
 
   const executableText = stripCodeExamples(markdown);
-  const requestsExternalAction = /must\s+use\s+the\s+internet|call\s+(?:an?\s+)?api|send\s+(?:an?\s+)?email/i.test(executableText);
+  const requestsExternalAction = externalActionPatterns.some((pattern) => pattern.test(executableText));
   const hasApprovalRequirement = approvalSection
     && hasPositiveApprovalLanguage(stripCodeExamples(approvalSection.body));
 
