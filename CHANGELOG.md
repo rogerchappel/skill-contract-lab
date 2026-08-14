@@ -10,3 +10,4 @@
 
 - Initial local-first SKILL.md contract checker.
 - Added Markdown and JSON reports, fixtures, tests, and agent skill documentation.
+- Reject contradictory approval sections when external actions are requested.
