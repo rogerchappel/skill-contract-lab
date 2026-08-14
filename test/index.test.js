@@ -51,6 +51,16 @@ test('passes a complete skill contract', () => {
   assert.equal(report.summary.errors, 0);
 });
 
+test('accepts required sections at nested ATX heading levels 4 through 6', () => {
+  for (const level of [4, 5, 6]) {
+    const nestedContract = goodSkill.replace(/^## /gm, `${'#'.repeat(level)} `);
+    const report = inspectSkill(nestedContract);
+
+    assert.equal(report.status, 'pass', `expected level-${level} headings to pass`);
+    assert.equal(report.summary.errors, 0);
+  }
+});
+
 test('fails missing required sections', () => {
   const report = inspectSkill('# Skill\n\nDo a task.\n');
   assert.equal(report.status, 'fail');
@@ -58,14 +68,19 @@ test('fails missing required sections', () => {
 });
 
 test('ignores required headings inside fenced and indented code blocks', () => {
+  const fencedContract = goodSkill.replace(/^## /gm, '#### ');
+  const indentedContract = goodSkill
+    .replace(/^## /gm, '###### ')
+    .split('\n')
+    .map((line) => `    ${line}`)
+    .join('\n');
   const fakeContract = `# Skill
 
 \`\`\`md
-${goodSkill}
+${fencedContract}
 \`\`\`
 
-    ## Required Inputs
-    Local paths, expected output, and review constraints are required before starting.
+${indentedContract}
 `;
   const report = inspectSkill(fakeContract);
 
