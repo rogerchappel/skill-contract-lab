@@ -125,7 +125,7 @@ function extractSections(markdown) {
       continue;
     }
 
-    const heading = /^(#{1,3})\s+(.+?)\s*$/.exec(line);
+    const heading = /^(#{1,6})\s+(.+?)\s*$/.exec(line);
     if (heading) {
       sections.push({ heading: current.heading, body: current.body.join('\n').trim() });
       current = { heading: normalize(heading[2]), body: [] };
