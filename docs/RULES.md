@@ -10,6 +10,10 @@ V1 requires these sections:
 - `Examples`
 - `Validation Workflow`
 
+Required section names may use ATX headings at any level from 1 through 6
+(`# Heading` through `###### Heading`). Headings inside fenced or indented code
+blocks are examples, not contract sections.
+
 Missing sections are errors. Sections with fewer than eight words are warnings.
 
 If executable prose requests a recognized external action, the body of `Approval Requirements` must substantively require approval or consent. The bounded action taxonomy covers:

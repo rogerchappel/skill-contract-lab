@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Recognize required contract sections in ATX headings at levels 1 through 6.
 - Reject negated or optional approval language when external actions require explicit approval.
 - Strengthen package smoke coverage for release reviewers.
 
