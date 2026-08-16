@@ -205,12 +205,48 @@ test('rejects equivalent approval requirement denials', () => {
   }
 });
 
+test('rejects contradictory approval scoped to a mentioned external action', () => {
+  const report = inspectSkill(approvalFixture('external-action-with-contradictory-approval'));
+
+  assert.equal(report.status, 'fail');
+  assert.ok(report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+});
+
+test('accepts genuinely approved actions after scoped approval is clarified', () => {
+  const markdown = approvalFixture('external-action-with-contradictory-approval')
+    .replace('No approval is required before sending email.', 'Explicit approval is required before sending email.');
+  const report = inspectSkill(markdown);
+
+  assert.equal(report.status, 'pass');
+  assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+});
+
+test('does not treat discussion of an external action as an approval-triggering request', () => {
+  const report = inspectSkill(contractWith({
+    action: 'Explain how email delivery works without sending email or calling an API.',
+    approval: 'No approval is required because this skill only discusses the workflow.',
+  }));
+
+  assert.equal(report.status, 'pass');
+  assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+});
+
 test('cli exits with a finding for denied approval language', () => {
   const fixturePath = new URL('../fixtures/external-action-with-denied-approval/SKILL.md', import.meta.url);
   const result = spawnSync(process.execPath, ['bin/skill-contract.js', fixturePath.pathname, '--format', 'json'], {
     cwd: new URL('..', import.meta.url),
     encoding: 'utf8',
   });
+
+  assert.equal(result.status, 2);
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.status, 'fail');
+  assert.ok(report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+});
+
+test('cli exits with a finding for contradictory scoped approval', () => {
+  const fixturePath = new URL('../fixtures/external-action-with-contradictory-approval/SKILL.md', import.meta.url);
+  const result = runCli([fixturePath.pathname, '--format', 'json']);
 
   assert.equal(result.status, 2);
   const report = JSON.parse(result.stdout);

@@ -18,6 +18,12 @@ contract section.
 
 Missing sections are errors. Sections with fewer than eight words are warnings.
 
+When a contract requests an external action, its approval section must contain a
+clear positive approval requirement. A section that both requires and denies
+approval is treated as contradictory and fails `approval-explicitness`; split
+scoped policies into an unambiguous rule before relying on the checker. Pure
+discussion of an external action does not create an approval requirement.
+
 If executable prose requests a recognized external action, the body of `Approval Requirements` must substantively require approval or consent. The bounded action taxonomy covers:
 
 - publishing packages or artifacts and creating, publishing, or pushing releases and tags;
