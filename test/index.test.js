@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { inspectSkill, renderMarkdown } from '../src/index.js';
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const approvalFixture = (name) => readFileSync(new URL(`../fixtures/${name}/SKILL.md`, import.meta.url), 'utf8');
@@ -13,6 +15,17 @@ function runCli(args) {
     cwd: cliCwd,
     encoding: 'utf8',
   });
+}
+
+function runCliMarkdown(markdown) {
+  const directory = mkdtempSync(join(tmpdir(), 'skill-contract-test-'));
+  const fixturePath = join(directory, 'SKILL.md');
+  writeFileSync(fixturePath, markdown);
+  try {
+    return runCli([fixturePath, '--format', 'json']);
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
 }
 
 const goodSkill = `# Skill
@@ -59,6 +72,37 @@ test('accepts required sections at nested ATX heading levels 4 through 6', () =>
     assert.equal(report.status, 'pass', `expected level-${level} headings to pass`);
     assert.equal(report.summary.errors, 0);
   }
+});
+
+test('accepts required ATX section headings with up to three leading spaces', () => {
+  for (const spaces of [1, 2, 3]) {
+    const indentedContract = goodSkill.replace(/^## /gm, `${' '.repeat(spaces)}## `);
+    const report = inspectSkill(indentedContract);
+
+    assert.equal(report.status, 'pass', `expected ${spaces}-space headings to pass`);
+    assert.equal(report.summary.errors, 0);
+  }
+});
+
+test('cli accepts required headings with one, two, or three leading spaces', () => {
+  for (const spaces of [1, 2, 3]) {
+    const indentedContract = goodSkill.replace(/^## /gm, `${' '.repeat(spaces)}## `);
+    const result = runCliMarkdown(indentedContract);
+
+    assert.equal(result.status, 0, `expected ${spaces}-space headings to pass: ${result.stderr}`);
+    assert.equal(JSON.parse(result.stdout).status, 'pass');
+  }
+});
+
+test('four-space ATX headings remain indented code examples', () => {
+  const indentedContract = goodSkill.replace(/^## /gm, '    ## ');
+  const report = inspectSkill(indentedContract);
+  const result = runCliMarkdown(indentedContract);
+
+  assert.equal(report.status, 'fail');
+  assert.equal(report.summary.errors, 7);
+  assert.equal(result.status, 2);
+  assert.equal(JSON.parse(result.stdout).summary.errors, 7);
 });
 
 test('fails missing required sections', () => {
