@@ -11,8 +11,10 @@ V1 requires these sections:
 - `Validation Workflow`
 
 Required section names may use ATX headings at any level from 1 through 6
-(`# Heading` through `###### Heading`). Headings inside fenced or indented code
-blocks are examples, not contract sections.
+(`# Heading` through `###### Heading`) with zero to three leading spaces, as
+allowed by Markdown. A heading with four leading spaces, a tab-indented
+heading, or a heading inside a fenced code block is an example rather than a
+contract section.
 
 Missing sections are errors. Sections with fewer than eight words are warnings.
 
