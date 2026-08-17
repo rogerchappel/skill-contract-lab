@@ -24,6 +24,7 @@ The checker is deterministic and local. It reports missing required sections as 
 
 - V1 uses section-based heuristics.
 - Approval checks recognize a bounded set of positive requirement phrases and reject common negated or optional forms; they do not perform general natural-language reasoning.
+- External-action checks recognize base, third-person, past, and gerund forms for the bounded publication/release, deployment, repository-write, and external-service action families. Discussion-only nouns and code examples remain excluded.
 - It does not judge factual quality.
 - It intentionally avoids LLM scoring so reports are stable in CI.
 

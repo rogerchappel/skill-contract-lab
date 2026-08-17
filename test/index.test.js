@@ -254,6 +254,16 @@ test('cli exits with a finding for contradictory scoped approval', () => {
   assert.ok(report.findings.some((finding) => finding.rule === 'approval-explicitness'));
 });
 
+test('fixture and CLI reject inflected external actions without approval', () => {
+  const fixturePath = new URL('../fixtures/external-action-inflections/SKILL.md', import.meta.url);
+  const report = inspectSkill(readFileSync(fixturePath, 'utf8'));
+  const result = runCli([fixturePath.pathname, '--format', 'json']);
+
+  assert.ok(report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+  assert.equal(result.status, 2);
+  assert.ok(JSON.parse(result.stdout).findings.some((finding) => finding.rule === 'approval-explicitness'));
+});
+
 test('ignores external-action language in fenced and indented examples', () => {
   const markdown = approvalFixture('external-action-without-approval')
     .replace('Send email with the completed report after validation succeeds.', 'Keep the completed report in local memory after validation succeeds.')
@@ -285,6 +295,24 @@ const externalActionFamilies = [
     nonAction: 'Describe the external webhook schema without calling or updating the service.',
   },
 ];
+
+const grammaticalActionForms = [
+  'Publishing the package to the registry is part of this workflow.',
+  'The workflow deployed the application to staging.',
+  'Pushing the branch updates the remote repository.',
+  'The connector sends a notification after validation.',
+];
+
+for (const action of grammaticalActionForms) {
+  test(`recognizes grammatical external-action form: ${action}`, () => {
+    const report = inspectSkill(contractWith({
+      action,
+      approval: 'No approval is required before performing the external action.',
+    }));
+
+    assert.ok(report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+  });
+}
 
 for (const { family, action, nonAction } of externalActionFamilies) {
   test(`accepts ${family} with explicit approval`, () => {

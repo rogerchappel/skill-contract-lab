@@ -13,18 +13,18 @@ const requiredSections = [
 // documentation does not by itself create an approval requirement.
 const externalActionPatterns = [
   // Package publication and releases.
-  /\b(?:publish|release)\s+(?:an?\s+|the\s+)?(?:package|packages|artifact|artifacts|release)\b/i,
-  /\b(?:create|publish|push)\s+(?:an?\s+|the\s+)?(?:remote\s+)?(?:release|release\s+tag|tag)\b/i,
+  /\b(?:publish(?:es|ed|ing)?|releas(?:e|es|ed|ing))\s+(?:an?\s+|the\s+)?(?:package|packages|artifact|artifacts|release)\b/i,
+  /\b(?:creat(?:e|es|ed|ing)|publish(?:es|ed|ing)?|push(?:es|ed|ing)?)\s+(?:an?\s+|the\s+)?(?:remote\s+)?(?:release|release\s+tag|tag)\b/i,
   // Deployments to remotely hosted environments.
-  /\bdeploy\s+(?:the\s+)?(?:app|application|service|site|website|build|release|artifact|artifacts|package|packages)\b/i,
-  /\bdeploy\s+(?:to|into)\s+(?:an?\s+|the\s+)?(?:production|staging|remote|hosted|cloud)\b/i,
+  /\bdeploy(?:s|ed|ing)?\s+(?:the\s+)?(?:app|application|service|site|website|build|release|artifact|artifacts|package|packages)\b/i,
+  /\bdeploy(?:s|ed|ing)?\s+(?:to|into)\s+(?:an?\s+|the\s+)?(?:production|staging|remote|hosted|cloud)\b/i,
   // Writes to remote repositories and their collaboration records.
-  /\b(?:push|merge)\s+(?:the\s+|an?\s+)?(?:commit|commits|branch|branches|pull\s+request|merge\s+request|tag|tags)\b/i,
-  /\b(?:open|create|close|approve|update|edit|comment\s+on)\s+(?:the\s+|an?\s+)?(?:pull\s+request|merge\s+request|issue|repository)\b/i,
+  /\b(?:push(?:es|ed|ing)?|merg(?:e|es|ed|ing))\s+(?:the\s+|an?\s+)?(?:commit|commits|branch|branches|pull\s+request|merge\s+request|tag|tags)\b/i,
+  /\b(?:open(?:s|ed|ing)?|creat(?:e|es|ed|ing)|clos(?:e|es|ed|ing)|approv(?:e|es|ed|ing)|updat(?:e|es|ed|ing)|edit(?:s|ed|ing)?|comment(?:s|ed|ing)?\s+on)\s+(?:the\s+|an?\s+)?(?:pull\s+request|merge\s+request|issue|repository)\b/i,
   // Writes through external services.
-  /\bsend\s+(?:an?\s+|the\s+)?(?:email|message|notification)\b/i,
-  /\b(?:post|upload|submit|write)\s+(?:to\s+)?(?:an?\s+|the\s+)?(?:external\s+)?(?:service|api|webhook|slack|discord|endpoint)\b/i,
-  /\bcall\s+(?:an?\s+|the\s+)?(?:external\s+)?api\b/i,
+  /\b(?:send(?:s|ing)?|sent)\s+(?:an?\s+|the\s+)?(?:email|message|notification)\b/i,
+  /\b(?:post(?:s|ed|ing)?|upload(?:s|ed|ing)?|submit(?:s|ted|ting)?|writ(?:e|es|ing)|wrote|written)\s+(?:to\s+)?(?:an?\s+|the\s+)?(?:external\s+)?(?:service|api|webhook|slack|discord|endpoint)\b/i,
+  /\bcall(?:s|ed|ing)?\s+(?:an?\s+|the\s+)?(?:external\s+)?api\b/i,
   /\bmust\s+use\s+the\s+internet\b/i,
 ];
 
@@ -45,7 +45,7 @@ export function inspectSkill(markdown, options = {}) {
     }
   }
 
-  const executableText = stripCodeExamples(markdown);
+  const executableText = stripDiscussionOnlyText(stripCodeExamples(markdown));
   const requestsExternalAction = externalActionPatterns.some((pattern) => pattern.test(executableText));
   const hasApprovalRequirement = approvalSection
     && hasPositiveApprovalLanguage(stripCodeExamples(approvalSection.body));
@@ -98,6 +98,13 @@ function stripCodeExamples(markdown) {
   }
 
   return prose.join('\n');
+}
+
+function stripDiscussionOnlyText(markdown) {
+  return markdown
+    .split(/\r?\n/)
+    .filter((line) => !/^\s*(?:[-*+]\s+)?(?:explain|describe|discuss)\b.*\bwithout\b/i.test(line))
+    .join('\n');
 }
 
 function extractSections(markdown) {
