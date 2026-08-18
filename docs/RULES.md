@@ -23,6 +23,10 @@ clear positive approval requirement. A section that both requires and denies
 approval is treated as contradictory and fails `approval-explicitness`; split
 scoped policies into an unambiguous rule before relying on the checker. Pure
 discussion of an external action does not create an approval requirement.
+Explicit prohibitions such as `never publish`, `do not send`, and `publishing is
+not allowed` are also not requests and therefore do not require approval.
+Affirmative actions still require approval, and mixed or contradictory clauses
+remain approval-triggering so that a prohibition cannot mask another action.
 
 If executable prose requests a recognized external action, the body of `Approval Requirements` must substantively require approval or consent. The bounded action taxonomy covers:
 
