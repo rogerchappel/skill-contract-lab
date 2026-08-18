@@ -46,7 +46,9 @@ export function inspectSkill(markdown, options = {}) {
   }
 
   const executableText = stripDiscussionOnlyText(stripCodeExamples(markdown));
-  const requestsExternalAction = externalActionPatterns.some((pattern) => pattern.test(executableText));
+  const requestsExternalAction = executableText
+    .split(/(?:[.!?;]|\r?\n)+/)
+    .some(clauseRequestsExternalAction);
   const hasApprovalRequirement = approvalSection
     && hasPositiveApprovalLanguage(stripCodeExamples(approvalSection.body));
 
@@ -64,6 +66,20 @@ export function inspectSkill(markdown, options = {}) {
     summary: { errors, warnings, sections: sections.length },
     findings
   };
+}
+
+function clauseRequestsExternalAction(clause) {
+  return externalActionPatterns.some((pattern) => {
+    const matcher = new RegExp(pattern.source, `${pattern.flags}g`);
+    return [...clause.matchAll(matcher)].some((match) => {
+      const before = clause.slice(0, match.index);
+      const after = clause.slice(match.index + match[0].length);
+      const activelyProhibited = /\b(?:never|do\s+not|don't|must\s+not|should\s+not|cannot|can't)\s+$/i.test(before);
+      const passivelyProhibited = /^\s+(?:is|are|was|were)\s+(?:explicitly\s+)?(?:not\s+(?:allowed|permitted)|prohibited|forbidden)\b/i.test(after);
+
+      return !activelyProhibited && !passivelyProhibited;
+    });
+  });
 }
 
 function hasPositiveApprovalLanguage(text) {

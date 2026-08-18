@@ -231,6 +231,44 @@ test('does not treat discussion of an external action as an approval-triggering 
   assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'));
 });
 
+for (const prohibition of [
+  'Never publish the package.',
+  'Do not send an email after validation.',
+  'Publishing the package is not allowed.',
+]) {
+  test(`does not treat a prohibited external action as requested: ${prohibition}`, () => {
+    const report = inspectSkill(contractWith({
+      action: `${prohibition} This checker only reads local files.`,
+      approval: 'No approval is required because all operations stay local and read-only.',
+    }));
+
+    assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+  });
+}
+
+test('still requires approval for affirmative and mixed external-action clauses', () => {
+  for (const action of [
+    'Publish the package after validation.',
+    'Do not publish the package, but send an email after validation.',
+    'Do not publish the package, but publish the artifact after validation.',
+  ]) {
+    const report = inspectSkill(contractWith({
+      action,
+      approval: 'No approval is required before performing the external action.',
+    }));
+
+    assert.ok(report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+  }
+});
+
+test('cli accepts a contract that explicitly prohibits external actions', () => {
+  const fixturePath = new URL('../fixtures/external-action-prohibited/SKILL.md', import.meta.url);
+  const result = runCli([fixturePath.pathname, '--format', 'json']);
+
+  assert.equal(result.status, 0);
+  assert.ok(!JSON.parse(result.stdout).findings.some((finding) => finding.rule === 'approval-explicitness'));
+});
+
 test('cli exits with a finding for denied approval language', () => {
   const fixturePath = new URL('../fixtures/external-action-with-denied-approval/SKILL.md', import.meta.url);
   const result = spawnSync(process.execPath, ['bin/skill-contract.js', fixturePath.pathname, '--format', 'json'], {
