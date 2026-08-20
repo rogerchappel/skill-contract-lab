@@ -235,6 +235,10 @@ for (const prohibition of [
   'Never publish the package.',
   'Do not send an email after validation.',
   'Publishing the package is not allowed.',
+  'It is not allowed to publish the package.',
+  "It isn't permitted to deploy the application.",
+  'The agent is prohibited from publishing a release.',
+  'The workflow was forbidden from sending an email.',
 ]) {
   test(`does not treat a prohibited external action as requested: ${prohibition}`, () => {
     const report = inspectSkill(contractWith({
@@ -251,6 +255,8 @@ test('still requires approval for affirmative and mixed external-action clauses'
     'Publish the package after validation.',
     'Do not publish the package, but send an email after validation.',
     'Do not publish the package, but publish the artifact after validation.',
+    'It is not allowed to publish the package, but send an email after validation.',
+    "It isn't permitted to deploy the application, but push the branch after validation.",
   ]) {
     const report = inspectSkill(contractWith({
       action,
@@ -266,6 +272,14 @@ test('cli accepts a contract that explicitly prohibits external actions', () => 
   const result = runCli([fixturePath.pathname, '--format', 'json']);
 
   assert.equal(result.status, 0);
+  assert.ok(!JSON.parse(result.stdout).findings.some((finding) => finding.rule === 'approval-explicitness'));
+});
+
+test('cli accepts pre-verbal passive external-action prohibitions', () => {
+  const fixturePath = new URL('../fixtures/external-action-preverbal-prohibited/SKILL.md', import.meta.url);
+  const result = runCli([fixturePath.pathname, '--format', 'json']);
+
+  assert.equal(result.status, 0, result.stderr);
   assert.ok(!JSON.parse(result.stdout).findings.some((finding) => finding.rule === 'approval-explicitness'));
 });
 
