@@ -10,7 +10,7 @@ Provide a local skill contract file and no remote service credentials.
 Use only the local checker and the local Node.js runtime.
 
 ## Side-Effect Boundaries
-Never publish the package; this checker only reads files in the local workspace.
+You may not publish the package; this checker only reads files in the local workspace.
 
 ## Approval Requirements
 No approval is required because every operation remains local and read-only.

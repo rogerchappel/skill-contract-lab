@@ -233,6 +233,8 @@ test('does not treat discussion of an external action as an approval-triggering 
 
 for (const prohibition of [
   'Never publish the package.',
+  'You may not publish the package.',
+  'The workflow may not send an email after validation.',
   'Do not send an email after validation.',
   'Publishing the package is not allowed.',
   'It is not allowed to publish the package.',
@@ -255,6 +257,7 @@ test('still requires approval for affirmative and mixed external-action clauses'
     'Publish the package after validation.',
     'Do not publish the package, but send an email after validation.',
     'Do not publish the package, but publish the artifact after validation.',
+    'You may not publish the package, but send an email after validation.',
     'It is not allowed to publish the package, but send an email after validation.',
     "It isn't permitted to deploy the application, but push the branch after validation.",
   ]) {
