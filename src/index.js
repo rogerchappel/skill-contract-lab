@@ -119,7 +119,7 @@ function stripCodeExamples(markdown) {
   let fence = null;
 
   for (const line of lines) {
-    const fenceMarker = /^( {0,3})(`{3,}|~{3,})(.*)$/.exec(line);
+    const fenceMarker = parseFenceMarker(line);
     if (fenceMarker) {
       const marker = fenceMarker[2];
       if (!fence) {
@@ -149,7 +149,7 @@ function extractSections(markdown) {
   let fence = null;
 
   for (const line of lines) {
-    const fenceMarker = /^( {0,3})(`{3,}|~{3,})(.*)$/.exec(line);
+    const fenceMarker = parseFenceMarker(line);
     if (fenceMarker) {
       const marker = fenceMarker[2];
       if (!fence) {
@@ -180,6 +180,15 @@ function extractSections(markdown) {
   }
   sections.push({ heading: current.heading, body: current.body.join('\n').trim() });
   return sections.filter((section) => section.heading !== 'preamble' || section.body.length > 0);
+}
+
+function parseFenceMarker(line) {
+  const match = /^( {0,3})(`{3,}|~{3,})(.*)$/.exec(line);
+  if (!match) return null;
+
+  // CommonMark does not recognize a backtick fence when its info string
+  // contains a backtick. Tilde fences have no equivalent restriction.
+  return match[2][0] === '`' && match[3].includes('`') ? null : match;
 }
 
 function findSection(sections, aliases) {
