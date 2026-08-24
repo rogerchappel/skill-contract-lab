@@ -27,6 +27,10 @@ Explicit prohibitions such as `never publish`, `may not publish`, `do not send`,
 not allowed` are also not requests and therefore do not require approval.
 Affirmative actions still require approval, and mixed or contradictory clauses
 remain approval-triggering so that a prohibition cannot mask another action.
+Approval is matched by action family: publication/release, deployment,
+repository writes, and external-service writes each need applicable positive
+language. When a contract requests more than one family, every family must be
+covered; approval for sending email does not approve a deployment.
 
 If executable prose requests a recognized external action, the body of `Approval Requirements` must substantively require approval or consent. The bounded action taxonomy covers:
 

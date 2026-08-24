@@ -11,21 +11,29 @@ const requiredSections = [
 // Keep this taxonomy bounded to actions that write outside the local workspace.
 // Each expression requires an action verb so discussion of related metadata or
 // documentation does not by itself create an approval requirement.
-const externalActionPatterns = [
+const externalActionFamilies = [
+  { id: 'publication', label: 'publication or release', patterns: [
   // Package publication and releases.
   /\b(?:publish(?:es|ed|ing)?|releas(?:e|es|ed|ing))\s+(?:an?\s+|the\s+)?(?:package|packages|artifact|artifacts|release)\b/i,
   /\b(?:creat(?:e|es|ed|ing)|publish(?:es|ed|ing)?|push(?:es|ed|ing)?)\s+(?:an?\s+|the\s+)?(?:remote\s+)?(?:release|release\s+tag|tag)\b/i,
+  ] },
+  { id: 'deployment', label: 'deployment', patterns: [
   // Deployments to remotely hosted environments.
   /\bdeploy(?:s|ed|ing)?\s+(?:the\s+)?(?:app|application|service|site|website|build|release|artifact|artifacts|package|packages)\b/i,
   /\bdeploy(?:s|ed|ing)?\s+(?:to|into)\s+(?:an?\s+|the\s+)?(?:production|staging|remote|hosted|cloud)\b/i,
+  ] },
+  { id: 'repository-write', label: 'repository write', patterns: [
   // Writes to remote repositories and their collaboration records.
   /\b(?:push(?:es|ed|ing)?|merg(?:e|es|ed|ing))\s+(?:the\s+|an?\s+)?(?:commit|commits|branch|branches|pull\s+request|merge\s+request|tag|tags)\b/i,
   /\b(?:open(?:s|ed|ing)?|creat(?:e|es|ed|ing)|clos(?:e|es|ed|ing)|approv(?:e|es|ed|ing)|updat(?:e|es|ed|ing)|edit(?:s|ed|ing)?|comment(?:s|ed|ing)?\s+on)\s+(?:the\s+|an?\s+)?(?:pull\s+request|merge\s+request|issue|repository)\b/i,
+  ] },
+  { id: 'external-service', label: 'external-service write', patterns: [
   // Writes through external services.
   /\b(?:send(?:s|ing)?|sent)\s+(?:an?\s+|the\s+)?(?:email|message|notification)\b/i,
   /\b(?:post(?:s|ed|ing)?|upload(?:s|ed|ing)?|submit(?:s|ted|ting)?|writ(?:e|es|ing)|wrote|written)\s+(?:to\s+)?(?:an?\s+|the\s+)?(?:external\s+)?(?:service|api|webhook|slack|discord|endpoint)\b/i,
   /\bcall(?:s|ed|ing)?\s+(?:an?\s+|the\s+)?(?:external\s+)?api\b/i,
   /\bmust\s+use\s+the\s+internet\b/i,
+  ] },
 ];
 
 export function inspectSkill(markdown, options = {}) {
@@ -46,14 +54,14 @@ export function inspectSkill(markdown, options = {}) {
   }
 
   const executableText = stripDiscussionOnlyText(stripCodeExamples(markdown));
-  const requestsExternalAction = executableText
+  const requestedFamilies = externalActionFamilies.filter((family) => executableText
     .split(/(?:[.!?;]|\r?\n)+/)
-    .some(clauseRequestsExternalAction);
-  const hasApprovalRequirement = approvalSection
-    && hasPositiveApprovalLanguage(stripCodeExamples(approvalSection.body));
+    .some((clause) => clauseRequestsExternalAction(clause, family.patterns)));
+  const approvalText = approvalSection && stripCodeExamples(approvalSection.body);
+  const uncoveredFamilies = requestedFamilies.filter((family) => !approvalText || !hasApprovalForFamily(approvalText, family));
 
-  if (requestsExternalAction && !hasApprovalRequirement) {
-    findings.push({ level: 'error', rule: 'approval-explicitness', message: 'External actions are mentioned without explicit approval language.' });
+  if (uncoveredFamilies.length > 0) {
+    findings.push({ level: 'error', rule: 'approval-explicitness', message: `External actions are mentioned without matching explicit approval language: ${uncoveredFamilies.map((family) => family.label).join(', ')}.` });
   }
 
   const errors = findings.filter((finding) => finding.level === 'error').length;
@@ -68,8 +76,8 @@ export function inspectSkill(markdown, options = {}) {
   };
 }
 
-function clauseRequestsExternalAction(clause) {
-  return externalActionPatterns.some((pattern) => {
+function clauseRequestsExternalAction(clause, patterns) {
+  return patterns.some((pattern) => {
     const matcher = new RegExp(pattern.source, `${pattern.flags}g`);
     return [...clause.matchAll(matcher)].some((match) => {
       const before = clause.slice(0, match.index);
@@ -81,6 +89,16 @@ function clauseRequestsExternalAction(clause) {
       return !activelyProhibited && !preVerballyProhibited && !passivelyProhibited;
     });
   });
+}
+
+function hasApprovalForFamily(text, family) {
+  return text.split(/(?:[.!?;]|\r?\n)+/).some((clause) => {
+    const broadlyScoped = /\b(?:external|remote)\s+actions?\b/i.test(clause);
+    const externalRecipientScoped = family.id === 'external-service'
+      && /\b(?:send(?:ing)?|deliver(?:ing)?)\b.*\bexternal\s+(?:recipient|service|system|endpoint)\b/i.test(clause);
+    const familyScoped = externalRecipientScoped || family.patterns.some((pattern) => pattern.test(clause));
+    return (broadlyScoped || familyScoped) && hasPositiveApprovalLanguage(clause);
+  }) && hasPositiveApprovalLanguage(text);
 }
 
 function hasPositiveApprovalLanguage(text) {

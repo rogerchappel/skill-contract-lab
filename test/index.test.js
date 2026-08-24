@@ -180,6 +180,35 @@ test('accepts external actions with an explicit approval requirement', () => {
   assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'));
 });
 
+test('rejects approval for a different external-action family', () => {
+  const report = inspectSkill(contractWith({
+    action: 'Deploy the application to staging after validation.',
+    approval: 'Explicit approval is required before sending an email notification.',
+  }));
+
+  assert.equal(report.status, 'fail');
+  assert.match(report.findings.find((finding) => finding.rule === 'approval-explicitness').message, /deployment/);
+});
+
+test('requires approval coverage for every requested external-action family', () => {
+  const report = inspectSkill(contractWith({
+    action: 'Deploy the application to staging and send an email notification after validation.',
+    approval: 'Explicit approval is required before deploying the application.',
+  }));
+
+  assert.equal(report.status, 'fail');
+  assert.match(report.findings.find((finding) => finding.rule === 'approval-explicitness').message, /external-service write/);
+});
+
+test('accepts separately matched approvals for multiple action families', () => {
+  const report = inspectSkill(contractWith({
+    action: 'Deploy the application to staging and send an email notification after validation.',
+    approval: 'Explicit approval is required before deploying the application. Consent must be obtained before sending an email notification.',
+  }));
+
+  assert.equal(report.status, 'pass');
+});
+
 test('rejects external actions when approval language denies a requirement', () => {
   const report = inspectSkill(approvalFixture('external-action-with-denied-approval'));
 
