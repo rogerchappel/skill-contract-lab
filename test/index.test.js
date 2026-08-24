@@ -136,6 +136,34 @@ ${indentedContract}
   );
 });
 
+test('invalid backtick fence info does not hide required headings', () => {
+  const markdown = `\`\`\`md\`invalid\n${goodSkill}`;
+  const report = inspectSkill(markdown);
+
+  assert.equal(report.status, 'pass');
+  assert.equal(report.summary.errors, 0);
+});
+
+test('detects external actions after an invalid backtick fence opener', () => {
+  const markdown = contractWith({
+    action: '```js bad`info\nPublish the package to the registry after validation.',
+  });
+  const report = inspectSkill(markdown);
+
+  assert.equal(report.status, 'fail');
+  assert.match(report.findings.find((finding) => finding.rule === 'approval-explicitness').message, /publication/);
+});
+
+test('cli reports external actions after an invalid backtick fence opener', () => {
+  const markdown = contractWith({
+    action: '```js bad`info\nPublish the package to the registry after validation.',
+  });
+  const result = runCliMarkdown(markdown);
+
+  assert.equal(result.status, 2);
+  assert.match(JSON.parse(result.stdout).findings.find((finding) => finding.rule === 'approval-explicitness').message, /publication/);
+});
+
 test('requires exact normalized section headings or documented aliases', () => {
   const suffixedHeadings = `# Skill
 
@@ -355,6 +383,19 @@ test('ignores external-action language in fenced and indented examples', () => {
   const report = inspectSkill(markdown);
 
   assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'));
+});
+
+test('preserves valid backtick and tilde fence exclusions', () => {
+  for (const fence of ['```text', '~~~ text']) {
+    const markdown = contractWith({
+      action: `${fence}\nPublish the package to the registry.\n${fence.slice(0, 3)}\nKeep the completed report in local memory after validation succeeds.`,
+    });
+    const report = inspectSkill(markdown);
+    const result = runCliMarkdown(markdown);
+
+    assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'), `expected ${fence} action to remain hidden`);
+    assert.equal(result.status, 0, `expected ${fence} CLI input to pass: ${result.stderr}`);
+  }
 });
 
 const externalActionFamilies = [
