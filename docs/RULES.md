@@ -14,7 +14,10 @@ Required section names may use ATX headings at any level from 1 through 6
 (`# Heading` through `###### Heading`) with zero to three leading spaces, as
 allowed by Markdown. A heading with four leading spaces, a tab-indented
 heading, or a heading inside a fenced code block is an example rather than a
-contract section.
+contract section. Backtick fences follow the CommonMark info-string rule: an
+opener whose info string contains a backtick is ordinary visible prose, not a
+fence. Valid backtick fences and tilde fences continue to hide their examples
+from section extraction and executable-text scanning.
 
 Missing sections are errors. Sections with fewer than eight words are warnings.
 
@@ -39,4 +42,4 @@ If executable prose requests a recognized external action, the body of `Approval
 - writing remote repository state by pushing or merging changes, or creating and updating pull requests, merge requests, issues, and repositories; and
 - writing through external services by sending email, messages, or notifications, posting or uploading to services and endpoints, or calling APIs.
 
-The section heading alone does not satisfy this rule. Denials such as `no approval is required`, `approval is not required`, or equivalent optional/negative wording do not count as an approval requirement. Related nouns in descriptive prose do not count without a recognized action verb. External-action phrases inside fenced or indented code examples are ignored.
+The section heading alone does not satisfy this rule. Denials such as `no approval is required`, `approval is not required`, or equivalent optional/negative wording do not count as an approval requirement. Related nouns in descriptive prose do not count without a recognized action verb. External-action phrases inside valid backtick or tilde fences and indented code examples are ignored; an invalid backtick opener does not hide the prose that follows it.
