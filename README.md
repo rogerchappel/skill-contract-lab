@@ -13,6 +13,7 @@ node bin/skill-contract.js fixtures/good-skill/SKILL.md --format json
 ## Rules
 
 The checker is deterministic and local. It reports missing required sections as errors and very short sections as warnings.
+Required sections may use ATX heading levels 1 through 6 with up to three leading spaces. CommonMark closing sequences are supported when whitespace separates them from the heading text (for example, `## Required Inputs ##`); an attached hash such as `## Required Inputs#` is part of the heading text and does not match the required section.
 
 ## Safety Notes
 
