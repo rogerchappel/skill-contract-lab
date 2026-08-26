@@ -170,16 +170,25 @@ function extractSections(markdown) {
       continue;
     }
 
-    const heading = /^ {0,3}(#{1,6})\s+(.+?)\s*$/.exec(line);
+    const heading = /^ {0,3}(#{1,6})[ \t]+(.+?)[ \t]*$/.exec(line);
     if (heading) {
       sections.push({ heading: current.heading, body: current.body.join('\n').trim() });
-      current = { heading: normalize(heading[2]), body: [] };
+      current = { heading: normalizeHeading(heading[2]), body: [] };
     } else {
       current.body.push(line);
     }
   }
   sections.push({ heading: current.heading, body: current.body.join('\n').trim() });
   return sections.filter((section) => section.heading !== 'preamble' || section.body.length > 0);
+}
+
+function normalizeHeading(value) {
+  const closingSequence = /^(.*?)[ \t]+#+$/.exec(value);
+  const content = closingSequence ? closingSequence[1] : value;
+
+  // Without separating whitespace, trailing hashes are heading content rather
+  // than a CommonMark ATX closing sequence. Keep that boundary significant.
+  return /#+$/.test(content) ? `${normalize(content.replace(/#+$/, ''))} #` : normalize(content);
 }
 
 function parseFenceMarker(line) {
