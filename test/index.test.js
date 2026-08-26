@@ -94,6 +94,32 @@ test('cli accepts required headings with one, two, or three leading spaces', () 
   }
 });
 
+test('rejects attached hashes on required section headings', () => {
+  for (const malformed of ['## Required Inputs#', '## Required Inputs###']) {
+    const markdown = goodSkill.replace('## Required Inputs', malformed);
+    const report = inspectSkill(markdown);
+
+    assert.equal(report.status, 'fail');
+    assert.ok(report.findings.some((finding) => finding.rule === 'inputs'));
+  }
+});
+
+test('cli rejects attached hashes but accepts CommonMark closing sequences', () => {
+  for (const malformed of ['## Required Inputs#', '## Required Inputs###']) {
+    const result = runCliMarkdown(goodSkill.replace('## Required Inputs', malformed));
+
+    assert.equal(result.status, 2);
+    assert.ok(JSON.parse(result.stdout).findings.some((finding) => finding.rule === 'inputs'));
+  }
+
+  for (const valid of ['## Required Inputs #', '## Required Inputs ##', '   #### Required Inputs ###']) {
+    const result = runCliMarkdown(goodSkill.replace('## Required Inputs', valid));
+
+    assert.equal(result.status, 0, `expected ${valid} to pass: ${result.stderr}`);
+    assert.equal(JSON.parse(result.stdout).status, 'pass');
+  }
+});
+
 test('four-space ATX headings remain indented code examples', () => {
   const indentedContract = goodSkill.replace(/^## /gm, '    ## ');
   const report = inspectSkill(indentedContract);
