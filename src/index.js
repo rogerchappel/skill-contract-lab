@@ -82,7 +82,7 @@ function clauseRequestsExternalAction(clause, patterns) {
     return [...clause.matchAll(matcher)].some((match) => {
       const before = clause.slice(0, match.index);
       const after = clause.slice(match.index + match[0].length);
-      const activelyProhibited = /\b(?:never|do\s+not|don't|may\s+not|must\s+not|should\s+not|cannot|can't)\s+$/i.test(before);
+      const activelyProhibited = /\b(?:never|do\s+not|don't|may\s+not|must\s+not|should\s+not|cannot|can't)\s+(?:(?:ever|never|explicitly|directly|automatically|remotely|publicly|immediately|intentionally|manually)\s+)*$/i.test(before);
       const preVerballyProhibited = /\b(?:(?:is|are|was|were)\s+(?:explicitly\s+)?(?:not\s+(?:allowed|permitted)|prohibited|forbidden)\s+(?:to|from)|(?:isn't|aren't|wasn't|weren't)\s+(?:explicitly\s+)?(?:allowed|permitted)\s+to)\s+$/i.test(before);
       const passivelyProhibited = /^\s+(?:is|are|was|were)\s+(?:explicitly\s+)?(?:not\s+(?:allowed|permitted)|prohibited|forbidden)\b/i.test(after);
 

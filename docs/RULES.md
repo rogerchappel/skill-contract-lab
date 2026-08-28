@@ -27,7 +27,9 @@ approval is treated as contradictory and fails `approval-explicitness`; split
 scoped policies into an unambiguous rule before relying on the checker. Pure
 discussion of an external action does not create an approval requirement.
 Explicit prohibitions such as `never publish`, `may not publish`, `do not send`, and `publishing is
-not allowed` are also not requests and therefore do not require approval.
+not allowed` are also not requests and therefore do not require approval. Common modifiers may
+appear between an active prohibition and its action, including `do not ever publish`, `must never
+deploy`, `should not automatically push`, and `may not directly send`.
 Affirmative actions still require approval, and mixed or contradictory clauses
 remain approval-triggering so that a prohibition cannot mask another action.
 Approval is matched by action family: publication/release, deployment,
