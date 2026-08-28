@@ -316,6 +316,10 @@ test('does not treat discussion of an external action as an approval-triggering 
 
 for (const prohibition of [
   'Never publish the package.',
+  'Do not ever publish the package.',
+  'The workflow must never deploy the application.',
+  'The agent should not automatically push the branch.',
+  'The workflow may not directly send an email after validation.',
   'You may not publish the package.',
   'The workflow may not send an email after validation.',
   'Do not send an email after validation.',
@@ -335,11 +339,20 @@ for (const prohibition of [
   });
 }
 
+test('cli accepts adverb-modified active external-action prohibitions', () => {
+  const fixturePath = new URL('../fixtures/external-action-adverb-prohibited/SKILL.md', import.meta.url);
+  const result = runCli([fixturePath.pathname, '--format', 'json']);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(!JSON.parse(result.stdout).findings.some((finding) => finding.rule === 'approval-explicitness'));
+});
+
 test('still requires approval for affirmative and mixed external-action clauses', () => {
   for (const action of [
     'Publish the package after validation.',
     'Do not publish the package, but send an email after validation.',
     'Do not publish the package, but publish the artifact after validation.',
+    'Do not ever publish the package, but send an email after validation.',
     'You may not publish the package, but send an email after validation.',
     'It is not allowed to publish the package, but send an email after validation.',
     "It isn't permitted to deploy the application, but push the branch after validation.",
