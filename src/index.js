@@ -35,6 +35,7 @@ const externalActionFamilies = [
   /\bmust\s+use\s+the\s+internet\b/i,
   ] },
 ];
+const externalActionPatterns = externalActionFamilies.flatMap((family) => family.patterns);
 
 export function inspectSkill(markdown, options = {}) {
   const sections = extractSections(markdown);
@@ -82,13 +83,34 @@ function clauseRequestsExternalAction(clause, patterns) {
     return [...clause.matchAll(matcher)].some((match) => {
       const before = clause.slice(0, match.index);
       const after = clause.slice(match.index + match[0].length);
-      const activelyProhibited = /\b(?:never|do\s+not|don't|may\s+not|must\s+not|should\s+not|cannot|can't)\s+(?:(?:ever|never|explicitly|directly|automatically|remotely|publicly|immediately|intentionally|manually)\s+)*$/i.test(before);
+      const activelyProhibited = isActivelyProhibited(clause, match);
       const preVerballyProhibited = /\b(?:(?:is|are|was|were)\s+(?:explicitly\s+)?(?:not\s+(?:allowed|permitted)|prohibited|forbidden)\s+(?:to|from)|(?:isn't|aren't|wasn't|weren't)\s+(?:explicitly\s+)?(?:allowed|permitted)\s+to)\s+$/i.test(before);
       const passivelyProhibited = /^\s+(?:is|are|was|were)\s+(?:explicitly\s+)?(?:not\s+(?:allowed|permitted)|prohibited|forbidden)\b/i.test(after);
 
       return !activelyProhibited && !preVerballyProhibited && !passivelyProhibited;
     });
   });
+}
+
+function isActivelyProhibited(clause, match, visited = new Set()) {
+  const key = `${match.index}:${match[0].length}`;
+  if (visited.has(key)) return false;
+  visited.add(key);
+
+  const before = clause.slice(0, match.index);
+  const direct = /\b(?:never|do\s+not|don't|may\s+not|must\s+not|should\s+not|cannot|can't)\s+(?:(?:ever|never|explicitly|directly|automatically|remotely|publicly|immediately|intentionally|manually)\s+)*$/i.test(before);
+  if (direct) return true;
+
+  const priorMatches = externalActionPatterns.flatMap((pattern) => {
+    const matcher = new RegExp(pattern.source, `${pattern.flags}g`);
+    return [...clause.matchAll(matcher)];
+  }).filter((candidate) => candidate.index + candidate[0].length <= match.index);
+  const prior = priorMatches.sort((left, right) => right.index - left.index)[0];
+  if (!prior) return false;
+
+  const connector = clause.slice(prior.index + prior[0].length, match.index);
+  return /^\s*,?\s*(?:and|or)\s+$/i.test(connector)
+    && isActivelyProhibited(clause, prior, visited);
 }
 
 function hasApprovalForFamily(text, family) {
