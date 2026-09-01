@@ -366,6 +366,40 @@ test('still requires approval for affirmative and mixed external-action clauses'
   }
 });
 
+test('a shared explicit prohibition covers coordinated external actions', () => {
+  for (const action of [
+    'Do not publish the package or deploy the application.',
+    'Never push the branch and send an email notification.',
+  ]) {
+    const report = inspectSkill(contractWith({
+      action,
+      approval: 'No approval is required because all operations stay local and read-only.',
+    }));
+
+    assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'), action);
+  }
+});
+
+test('cli accepts coordinated external actions under one prohibition', () => {
+  const result = runCliMarkdown(contractWith({
+    action: 'Do not publish the package or deploy the application.',
+    approval: 'No approval is required because all operations stay local and read-only.',
+  }));
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(!JSON.parse(result.stdout).findings.some((finding) => finding.rule === 'approval-explicitness'));
+});
+
+test('a shared prohibition does not hide a later affirmative action', () => {
+  const report = inspectSkill(contractWith({
+    action: 'Do not publish the package or deploy the application, but send an email notification.',
+    approval: 'No approval is required before performing the external action.',
+  }));
+
+  assert.equal(report.status, 'fail');
+  assert.match(report.findings.find((finding) => finding.rule === 'approval-explicitness').message, /external-service write/);
+});
+
 test('cli accepts a contract that explicitly prohibits external actions', () => {
   const fixturePath = new URL('../fixtures/external-action-prohibited/SKILL.md', import.meta.url);
   const result = runCli([fixturePath.pathname, '--format', 'json']);
