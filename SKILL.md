@@ -33,4 +33,7 @@ node bin/skill-contract.js fixtures/good-skill/SKILL.md --format json
 
 ## Validation Workflow
 
-Run `npm test`, `npm run check`, and `npm run smoke`. Review every error before treating a skill as reusable.
+Run `npm run validate` after repository changes. It covers syntax, tests, the CLI
+smoke, the review-target example, and the packed-artifact smoke check. Before a
+release, run the complete CI release gate with `npm run release:check`. Review
+every error before treating a skill as reusable or release-ready.
