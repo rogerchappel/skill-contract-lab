@@ -566,3 +566,9 @@ for (const [name, args, message] of [
     assert.equal(result.stdout, '');
   });
 }
+
+test('does not treat seven or more hash characters as a heading', () => {
+  const report = inspectSkill('# Skill\n\n####### Not a heading\n\nDo a task.\n');
+  assert.equal(report.summary.sections, 1);
+  assert.ok(report.findings.some((finding) => finding.rule === 'inputs'));
+});
