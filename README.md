@@ -7,7 +7,7 @@
 ```bash
 npm install
 npm run smoke
-node bin/skill-contract.js fixtures/good-skill/SKILL.md --format json
+node bin/skill-contract.js fixtures/good-skill/SKILL.md --format markdown
 ```
 
 ## Rules
