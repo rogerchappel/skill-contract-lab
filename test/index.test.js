@@ -458,6 +458,19 @@ test('ignores external-action language in fenced and indented examples', () => {
   assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'));
 });
 
+test('unclosed backtick and tilde fences exclude following content through end of file', () => {
+  for (const fence of ['```', '~~~']) {
+    const markdown = `# Skill\n\n${fence}text\n\n## When To Use\nUnclosed fence content is not a real required section.\n\nPublish the package to the registry after validation.`;
+    const report = inspectSkill(markdown);
+    const result = runCliMarkdown(markdown);
+
+    assert.equal(report.summary.sections, 1, `expected only the preamble before ${fence} to be extracted`);
+    assert.equal(result.status, 2, `expected missing sections to fail through CLI: ${result.stderr}`);
+    assert.ok(report.findings.some((finding) => finding.rule === 'when-to-use'));
+    assert.ok(!report.findings.some((finding) => finding.rule === 'approval-explicitness'), 'fenced actions must remain excluded');
+  }
+});
+
 test('preserves valid backtick and tilde fence exclusions', () => {
   for (const fence of ['```text', '~~~ text']) {
     const markdown = contractWith({
